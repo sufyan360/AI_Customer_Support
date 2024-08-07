@@ -17,6 +17,7 @@ export async function POST(req) {
     model: 'openai/gpt-3.5-turbo',
   })
 
-  console.log(completion.choices[0].message.content)
-  return NextResponse.json({message: 'Hello from server'})
+  return NextResponse.json({message: completion.choices[0].message.content},
+    {status: 200},
+  )
 }
