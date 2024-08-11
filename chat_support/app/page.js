@@ -112,8 +112,8 @@ useEffect(() => {
               <Box
                 bgcolor={
                   message.role === 'assistant'
-                    ? 'primary.main'
-                    : 'secondary.main'
+                    ? '#96d7c6'
+                    : '#6c8cbf'
                 }
                 color='white'
                 borderRadius={16}
@@ -134,7 +134,10 @@ useEffect(() => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <Button variant='contained' onClick={sendMessage}>Send</Button>
+          <Button 
+            variant='contained' 
+            style={{ backgroundColor: '#96d7c6', color: 'white' }} 
+            onClick={sendMessage}>Send</Button>
         </Stack>
         
       </Stack>
