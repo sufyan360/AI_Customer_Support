@@ -10,7 +10,8 @@ If you do not have enough information to answer a question, ask the user for mor
 
 export async function POST(req) {
   const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
   });
 
   const data = await req.json();
