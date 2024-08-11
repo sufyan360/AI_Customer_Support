@@ -9,8 +9,12 @@ export async function POST(req) {
   const openai = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY,
+<<<<<<< Updated upstream
   }) 
   const data = await req.json() 
+=======
+  });
+>>>>>>> Stashed changes
 
   const completion = await openai.chat.completions.create({
     messages: [{role: 'system', content: systemPrompt}, ...data],
