@@ -1,12 +1,26 @@
 "use client"
 import { Box, Button, Stack, TextField, AppBar, Toolbar, Typography } from '@mui/material';
 import { useState, useRef, useEffect } from 'react';
+import {franc} from 'franc';
 
 export default function Home() {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Hi, I am a mental health assistant. How can I be of service today?' },
   ]);
   const [message, setMessage] = useState('');
+  const [language, setLanguage] = useState('');
+
+//detecting langauge from user input
+const detectLanguage = (text) => {
+  const langCode = franc(text);
+  setLanguage(langCode);
+};
+
+useEffect(() => {
+  if (messages.length > 0) {
+    detectLanguage(messages.map(msg => msg.content).join(' '));
+  }
+}, [messages]);
 
   const sendMessage = async () => {
     setMessages((messages) => [...messages, { role: 'user', content: message }]);
