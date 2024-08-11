@@ -1,6 +1,6 @@
 "use client"
 import { Box, Button, Stack, TextField, AppBar, Toolbar, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -39,6 +39,16 @@ export default function Home() {
       });
     });
   };
+
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   return (
     <Box
@@ -99,7 +109,9 @@ export default function Home() {
                 {message.content}
               </Box>
             </Box>
+            
           ))}
+          <div ref={messagesEndRef} />
         </Stack>
         <Stack direction={'row'} spacing={2}>
           <TextField
@@ -110,6 +122,7 @@ export default function Home() {
           />
           <Button variant='contained' onClick={sendMessage}>Send</Button>
         </Stack>
+        
       </Stack>
     </Box>
   );
