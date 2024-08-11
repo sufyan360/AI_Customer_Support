@@ -161,6 +161,7 @@ const handleKeyPress = (event) => {
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             disabled={isLoading}
+            autoComplete='off'
           />
           <Button 
             variant='contained' 
