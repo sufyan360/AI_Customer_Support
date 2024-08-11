@@ -1,5 +1,5 @@
 "use client"
-import { Box, Button, Stack, TextField } from '@mui/material';
+import { Box, Button, Stack, TextField, AppBar, Toolbar, Typography } from '@mui/material';
 import { useState } from 'react';
 
 export default function Home() {
@@ -45,10 +45,20 @@ export default function Home() {
       width="100vw"
       height="100vh"
       display="flex"
+      margin="0"
+      padding="0"
       flexDirection="column"
       justifyContent="center"
       alignItems={'center'}
     >
+
+<AppBar position="fixed" sx={{ backgroundColor: '#96d7c6' }} >
+        <Toolbar style={{ justifyContent: 'center'}}>
+          <Typography variant="h4" sx={{ color: '#6c8cbf', fontFamily: 'Lucida Console, monospace', fontWeight: 'bold'  }} padding={3}>
+            Mental Health Assistant
+          </Typography>
+        </Toolbar>
+      </AppBar>
       <Stack
         direction={'column'}
         width={'500px'}
@@ -56,6 +66,7 @@ export default function Home() {
         border={"1px solid black"}
         p={2}
         spacing={3}
+        mt={13}
       >
         <Stack
           direction={'column'}
