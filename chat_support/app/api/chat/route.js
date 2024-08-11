@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
+import pinecone from './pineconeClient';
+
+const indexName = 'chatbot';
 
 const systemPrompt = `
 You are a mental health assistant. Your role is to act as a virtual therapist.
@@ -16,9 +19,34 @@ export async function POST(req) {
 
   const data = await req.json();
 
+  const userQuery = data.find(message => message.role === 'user')?.content;
+
+  // Generate embedding for the user query
+  const response = await fetch('http://localhost:5000/generate_embeddings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ texts: [userQuery] })
+  }).then(res => res.json());
+
+  const queryEmbedding = response.embeddings[0];
+
+  // Query Pinecone index
+  const pineconeIndex = pinecone.Index(indexName);
+  const results = await pineconeIndex.query({
+    top_k: 5,
+    queries: [queryEmbedding]
+  });
+
+  // Prepare for OpenAI
+  const retrievedDocs = results.matches.map(match => match.metadata.text).join('\n')
+
   try {
     const completion = await openai.chat.completions.create({
-      messages: [{ role: 'system', content: systemPrompt }, ...data],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...data,
+        { role: 'user', content: `Relevant documents: ${retrievedDocuments}` },
+      ],
       model: 'gpt-3.5-turbo',
       stream: true
     });
