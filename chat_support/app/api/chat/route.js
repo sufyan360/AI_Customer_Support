@@ -1,23 +1,48 @@
-import { NextResponse } from 'next/server'
-import { OpenAI } from 'openai' 
+import { NextResponse } from 'next/server';
+import { OpenAI } from 'openai';
 
-// System prompt for the AI, providing guidelines on how to respond to users
-const systemPrompt = 'helpful ai assistant'
+const systemPrompt = `
+You are a mental health assistant. Your role is to act as a virtual therapist.
+Provide supportive, empathetic, and professional responses.
+Help users manage their mental health issues by offering advice and support.
+If you do not have enough information to answer a question, ask the user for more details.
+`;
 
-// POST function to handle incoming requests
 export async function POST(req) {
   const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  }) 
-  const data = await req.json() 
+    apiKey: process.env.OPENAI_API_KEY,
+  });
 
-  const completion = await openai.chat.completions.create({
-    messages: [{role: 'system', content: systemPrompt}, ...data],
-    model: 'openai/gpt-3.5-turbo',
-  })
+  const data = await req.json();
 
-  return NextResponse.json({message: completion.choices[0].message.content},
-    {status: 200},
-  )
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: 'system', content: systemPrompt }, ...data],
+      model: 'gpt-3.5-turbo',
+      stream: true
+    });
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) {
+              const text = encoder.encode(content);
+              controller.enqueue(text);
+            }
+          }
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          controller.close();
+        }
+      }
+    });
+
+    return new NextResponse(stream);
+  } catch (err) {
+    return new NextResponse(`Error: ${err.message}`, { status: 500 });
+  }
 }
