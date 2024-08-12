@@ -41,6 +41,8 @@ export async function POST(req) {
       body: JSON.stringify({ texts: [userQuery] }),
     });
 
+    console.log(embeddingResponse);
+
     const parsedResponse = await embeddingResponse.json();
     const queryEmbedding = parsedResponse.embeddings[0];
 
