@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import pinecone from './pineconeClient';
+import { Pinecone } from '@pinecone-database/pinecone';
+
 
 const indexName = 'chatbot';
 
@@ -12,43 +13,56 @@ If you do not have enough information to answer a question, ask the user for mor
 `;
 
 export async function POST(req) {
-  const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  });
-
-  const data = await req.json();
-
-  const userQuery = data.find(message => message.role === 'user')?.content;
-
-  // Generate embedding for the user query
-  const response = await fetch('http://localhost:5000/generate_embeddings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ texts: [userQuery] })
-  }).then(res => res.json());
-
-  const queryEmbedding = response.embeddings[0];
-
-  // Query Pinecone index
-  const pineconeIndex = pinecone.Index(indexName);
-  const results = await pineconeIndex.query({
-    top_k: 5,
-    queries: [queryEmbedding]
-  });
-
-  // Prepare for OpenAI
-  const retrievedDocs = results.matches.map(match => match.metadata.text).join('\n')
-
   try {
+    const pinecone = new Pinecone({apiKey: '95d7c854-743b-4eca-8065-6943edcc6c04'});
+    const indexName = 'chatbot';
+    const indexExists = await pinecone.index(indexName);
+
+    if (!indexExists) {
+      await pinecone.createIndex({
+        name: indexName,
+        dimension: 768, // Adjust dimension based on your model
+      });
+    }
+
+    const openai = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: process.env.OPENROUTER_API_KEY,
+    });
+
+    const data = await req.json();
+    const userQuery = data.find(message => message.role === 'user')?.content;
+
+
+    // Generate embedding for the user query
+    const embeddingResponse = await fetch('http://localhost:5000/generate_embeddings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: [userQuery] }),
+    });
+
+    const parsedResponse = await embeddingResponse.json();
+    const queryEmbedding = parsedResponse.embeddings[0];
+
+
+    // Query Pinecone index
+    const pineconeIndex = pinecone.Index(indexName);
+    const results = await pineconeIndex.query({
+      top_k: 5,
+      queries: [queryEmbedding],
+    });
+
+    // Prepare the context for OpenAI
+    const retrievedDocs = results.matches.map(match => match.metadata.text).join('\n');
+
     const completion = await openai.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
         ...data,
-        { role: 'user', content: `Relevant documents: ${retrievedDocuments}` },
+        { role: 'user', content: `Relevant documents: ${retrievedDocs}` },
       ],
       model: 'gpt-3.5-turbo',
-      stream: true
+      stream: true,
     });
 
     const stream = new ReadableStream({
@@ -67,11 +81,12 @@ export async function POST(req) {
         } finally {
           controller.close();
         }
-      }
+      },
     });
 
     return new NextResponse(stream);
-  } catch (err) {
-    return new NextResponse(`Error: ${err.message}`, { status: 500 });
+  } catch (error) {
+    console.error('Error handling request:', error);
+    return new NextResponse(`Error: ${error.message}`, { status: 500 });
   }
 }
